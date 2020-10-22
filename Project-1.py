@@ -1,3 +1,6 @@
+# Team 14 
+# Adam Dressel, Benjamin Cano, Carolina Bado-Cortes
+
 import numpy as np
 import pandas as pd
 import chardet
@@ -50,20 +53,25 @@ rev_df = pd.DataFrame(rev_dic)
 # Separate container for the entire vocabulary of the data set. 
 vocab = []
 
+# Append each word in each review after tokenizing.
 for token_list in tok_rev:
     for word in token_list:
         vocab.append(word)
 
+# Get only the unique elements of the vocab.
 unique_words = np.unique(vocab, return_counts = True)[0]
 unique_counts = np.unique(vocab, return_counts = True)[1]
+
+# Print the size of the vocabulary.
+print(len(unique_words))
 
 # Apply numerical labels to Ratings for Naive Bayes classification.
 
 rev_df['Rating'] = rev_df['Rating'].replace('fresh', 0)
 rev_df['Rating'] = rev_df['Rating'].replace('rotten', 1)
 
-# plt.bar(unique_words, unique_counts, tick_label = unique_words)
-# plt.show()
+plt.bar(unique_words[1000:1005], unique_counts[1000:1005], tick_label = unique_words[1000:1005])
+plt.show()
 
 # Declare index so we can append columns beginning at position 2 in the dataframe. (After Rating and Text_data)
 idx = 2
@@ -76,10 +84,17 @@ for index in rev_df.index:
     for word in rev_df.loc[index, "text_data"]:
         rev_df.loc[index, word] += 1.0
 
-
+print(np.shape(rev_df))
 
 review_data['Freshness'] = np.where(review_data['Freshness']=='Freshness',1,0)
 
+rating_ct = rev_df['Rating'].value_counts().tolist()
+
+
+fig1, ax1 = plt.subplots()
+ax1.pie(rating_ct, labels = ['fresh', 'rotten'])
+ax1.axis('equal')
+plt.show()
 
 X_train, X_test, y_train, y_test = train_test_split(review_data['Review'][0:10000], 
                                                     review_data['Freshness'][0:10000], 
