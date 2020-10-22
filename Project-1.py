@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 #import used for preprocessing.
 import spacy
 import nltk
-
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn import metrics
 
 #Function used for preprocessing text data from csv
 def token_filter(token):
@@ -41,7 +44,7 @@ for review in nlp.pipe(reviews[0:1000]):
     tok_rev.append(tokens)
 
 # Create dictionary to pass into new dataframe.
-rev_dic = {'Rating' : freshness[0:1000], 'Review' : tok_rev}
+rev_dic = {'Rating' : freshness[0:1000], 'text_data' : tok_rev}
 rev_df = pd.DataFrame(rev_dic)
 
 # Separate container for the entire vocabulary of the data set. 
@@ -59,11 +62,37 @@ unique_counts = np.unique(vocab, return_counts = True)[1]
 rev_df['Rating'] = rev_df['Rating'].replace('fresh', 0)
 rev_df['Rating'] = rev_df['Rating'].replace('rotten', 1)
 
-print(rev_df)
 # plt.bar(unique_words, unique_counts, tick_label = unique_words)
 # plt.show()
 
-training_set = rev_df['Review'][0:800]
-test_set = rev_df[800:1000]
+# Declare index so we can append columns beginning at position 2 in the dataframe. (After Rating and Text_data)
+idx = 2
+# Add a column for each unique word for frequency matrix.
+for word in unique_words:
+    rev_df.insert(idx, word, np.zeros(1000), allow_duplicates = True)
+    idx += 1
 
-classifier = nltk.NaiveBayesClassifier.train(training_set)
+for index in rev_df.index:
+    for word in rev_df.loc[index, "text_data"]:
+        rev_df.loc[index, word] += 1.0
+
+
+
+review_data['Freshness'] = np.where(review_data['Freshness']=='Freshness',1,0)
+
+
+X_train, X_test, y_train, y_test = train_test_split(review_data['Review'][0:10000], 
+                                                    review_data['Freshness'][0:10000], 
+                                                    test_size = 0.2, 
+                                                    random_state = 42)
+
+vectorizer = TfidfVectorizer()
+X_train_tfidf = vectorizer.fit_transform(X_train).toarray()
+X_test_tfidf = vectorizer.transform(X_test).toarray()
+
+classifier = MultinomialNB()
+classifier.fit(X_train_tfidf, y_train)
+predicted = classifier.predict(X_test_tfidf)
+acc = metrics.accuracy_score(y_test, predicted)
+
+print('accuracy: ', acc*100)
